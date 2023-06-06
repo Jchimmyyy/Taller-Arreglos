@@ -1,3 +1,6 @@
+import javax.sql.rowset.CachedRowSet;
+import java.util.ArrayList;
+import java.util.Collections;
 /**
  * Esta clase representa un parqueadero con TAMANO puestos.
  */
@@ -54,6 +57,7 @@ public class Parqueadero {
      * Contenedora de tama�o fijo de puestos.
      */
     private Puesto puestos[];
+    private int cantidadCarrosSacados;
 
     /**
      * Tarifa por hora en el parqueadero.
@@ -139,7 +143,7 @@ public class Parqueadero {
         else
         {
             // Buscar en el parqueadero un carro con la placa indicada
-            int numPuestoCarro = buscarPuestoCarro( pPlaca.toUpperCase( ) );
+            int numPuestoCarro = buscarPuestoCarro( pPlaca.toUpperCase() );
             if( numPuestoCarro != CARRO_NO_EXISTE )
             {
                 resultado = CARRO_YA_EXISTE;
@@ -187,6 +191,7 @@ public class Parqueadero {
                 caja = caja + porPagar;
                 puestos[ numPuesto ].sacarCarro( );
                 resultado = porPagar;
+                cantidadCarrosSacados++;
             }
         }
 
@@ -215,7 +220,7 @@ public class Parqueadero {
             {
                 puestosLibres = puestosLibres + 1;
             }
-        }
+       }
         return puestosLibres;
     }
 
@@ -324,9 +329,19 @@ public class Parqueadero {
      * M�todo de extensi�n 1.
      * @return Respuesta 1.
      */
-    public String metodo1( )
+    public String metodo1()
     {
-        return "respuesta 1";
+        int cantidadCarrosPB = contarCarrosQueComienzanConPlacaPB();
+        boolean hayCarro24HorasOMas = hayCarroCon24Horas();
+
+        String mensaje = "Cantidad de carros con placa PB: " + cantidadCarrosPB + " - Hay carro parqueado por 24 o más horas: ";
+
+        if (hayCarro24HorasOMas) {
+            mensaje += "Sí.";
+        } else {
+            mensaje += "No.";
+        }
+        return mensaje;
     }
 
     /**
@@ -335,7 +350,128 @@ public class Parqueadero {
      */
     public String metodo2( )
     {
-        return "respuesta 2";
+        String mensaje = "Cantidad de carros sacados: " + cantidadCarrosSacados + ".";
+        return mensaje;
+    }
+
+    public float darTiempoPromedio(){// tiempo promedio de los carros en el parqueadero
+        double totalTiempos=0;
+        int cantidadCarros =0;
+        for( Puesto puesto : puestos )
+        {
+            if( puesto.estaOcupado( ) )
+
+            {
+
+                Carro carro = puesto.darCarro();
+                int nHoras = carro.darTiempoEnParqueadero( horaActual );
+                totalTiempos +=nHoras;
+                cantidadCarros++;
+            }
+    }
+        double tiempoPromedio=totalTiempos/cantidadCarros;
+        return (float) tiempoPromedio;
+    }
+
+    public boolean hayCarrosMasDeOchoHoras(){
+        for(Puesto puesto:puestos){
+            if(puesto.estaOcupado()){
+                Carro carro = puesto.darCarro();
+                int horasEnParqueadero = carro.darTiempoEnParqueadero(horaActual);
+                if(horasEnParqueadero>8){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public ArrayList<Carro>darCarrosMasDe8HorasParqueados(){
+        ArrayList<Carro> carrosMasDe8Horas = new ArrayList<>();
+        for(Puesto puesto:puestos){
+            if(puesto.estaOcupado()){
+                Carro carro = puesto.darCarro();
+                int horasEnParqueadero = carro.darTiempoEnParqueadero(horaActual);
+                if(horasEnParqueadero>8){
+                    carrosMasDe8Horas.add(carro);
+                }
+            }
+        }
+        return carrosMasDe8Horas;
+    }
+    public ArrayList<Carro>darCarrosMasDeTresHorasParqueados(){
+    ArrayList<Carro> carrosMasDeTresHoras = new ArrayList<>();
+    for(Puesto puesto:puestos){
+        if(puesto.estaOcupado()){
+            Carro carro = puesto.darCarro();
+            int horasEnParqueadero = carro.darTiempoEnParqueadero(horaActual);
+            if(horasEnParqueadero>3){
+                carrosMasDeTresHoras.add(carro);
+            }
+        }
+    }
+    return carrosMasDeTresHoras;
+    }
+    public boolean hayCarrosPlacaIgual(int pPosicion) {
+        if (estaOcupado(pPosicion)) {
+            String placaActual = puestos[pPosicion].darCarro().darPlaca();
+
+            for (int i = 0; i < puestos.length; i++) {
+                if (i != pPosicion && estaOcupado(i)) {
+                    String placaComparar = puestos[i].darCarro().darPlaca();
+
+                    if (placaActual.equals(placaComparar)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public int contarCarrosQueComienzanConPlacaPB(){
+        int contador = 0;
+
+        for (Puesto puesto : puestos) {
+            if (puesto.estaOcupado()) {
+                Carro carro = puesto.darCarro();
+                String placa = carro.darPlaca();
+
+                if (placa.toLowerCase().startsWith("pb")) {
+                    contador++;
+                }
+            }
+        }
+
+        return contador;
+    }
+    public boolean hayCarroCon24Horas(){
+        long ahora= System.currentTimeMillis();
+        long limite= ahora -(24*60*60*1000);
+
+        for (int i=0; i<TAMANO; i++){
+            if (puestos[i].estaOcupado()){
+                long horaIngreso= puestos[i].darCarro().darHoraLlegada();
+                if (horaIngreso < limite) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public int desocuparParqueadero(){
+        int carrosSacados = 0;
+
+        //RECORRE LOS PUESTOS DEL PARQUEADERO
+        for (Puesto puesto : puestos){
+            //VERIFICA SI EL CARRO ESTA OCUPADO
+            if (puesto.estaOcupado()){
+                //SACA EL CARRO DEL PUESTO
+                puesto.sacarCarro();
+                carrosSacados++;
+            }
+        }
+        return carrosSacados;
     }
 
 }

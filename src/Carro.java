@@ -5,7 +5,6 @@ public class Carro {
 // -----------------------------------------------------------------
     // Atributos
     // -----------------------------------------------------------------
-
     /**
      * Placa del carro.
      */
@@ -82,4 +81,5 @@ public class Carro {
         int tiempoParqueadero = pHoraSalida - horaLlegada + 1;
         return tiempoParqueadero;
     }
+
 }
